@@ -1,0 +1,95 @@
+// Gestor de Personal - DP World Air Cargo Hub
+// https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// ─── Usuarios del sistema (quienes hacen login) ───────────────────────────────
+model User {
+  id           Int      @id @default(autoincrement())
+  username     String   @unique
+  name         String
+  passwordHash String
+  role         String   @default("supervisor") // "admin" | "supervisor"
+  active       Boolean  @default(true)
+  createdAt    DateTime @default(now())
+
+  assignments            Assignment[]
+  supervisorAssignments  SupervisorAssignment[]
+}
+
+// ─── Colaboradores (empleados a asignar) ─────────────────────────────────────
+model Employee {
+  id        Int      @id @default(autoincrement())
+  name      String
+  role      String   @default("operario") // "operario" | "supervisor_cargo" | "mantenimiento"
+  active    Boolean  @default(true)
+  createdAt DateTime @default(now())
+
+  daysOffWeekly   DayOffWeekly[]
+  daysOffSpecific DayOffSpecific[]
+  assignments     Assignment[]
+  supervisorAssignments SupervisorAssignment[]
+}
+
+// ─── Días libres recurrentes (por día de la semana) ──────────────────────────
+model DayOffWeekly {
+  id         Int      @id @default(autoincrement())
+  employee   Employee @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+  employeeId Int
+  dayOfWeek  Int      // 0=Domingo, 1=Lunes, 2=Martes, 3=Miércoles, 4=Jueves, 5=Viernes, 6=Sábado
+}
+
+// ─── Días libres específicos (fechas puntuales: vacaciones, permisos) ─────────
+model DayOffSpecific {
+  id         Int      @id @default(autoincrement())
+  employee   Employee @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+  employeeId Int
+  date       String   // YYYY-MM-DD
+  reason     String?  // "Vacaciones", "Permiso", "Enfermedad", etc.
+}
+
+// ─── Zonas de trabajo (fijas, se cargan con seed) ────────────────────────────
+model Zone {
+  id           Int    @id @default(autoincrement())
+  name         String
+  displayOrder Int
+  isSubZone    Boolean @default(false) // true = MANTENIMIENTO dentro de ZONA FRIA
+  parentZoneId Int?   // null = zona principal
+
+  assignments  Assignment[]
+}
+
+// ─── Asignaciones diarias de operarios a zonas ───────────────────────────────
+model Assignment {
+  id          Int      @id @default(autoincrement())
+  date        String   // YYYY-MM-DD
+  employee    Employee @relation(fields: [employeeId], references: [id])
+  employeeId  Int
+  zone        Zone     @relation(fields: [zoneId], references: [id])
+  zoneId      Int
+  shiftTime   String   // "6:00 AM" | "8:00 AM" | "11:00 AM" | "1:00 PM"
+  notes       String?
+  createdBy   User     @relation(fields: [createdById], references: [id])
+  createdById Int
+  createdAt   DateTime @default(now())
+}
+
+// ─── Asignaciones de supervisores (fila de header en el Excel) ───────────────
+model SupervisorAssignment {
+  id          Int      @id @default(autoincrement())
+  date        String   // YYYY-MM-DD
+  employee    Employee @relation(fields: [employeeId], references: [id])
+  employeeId  Int
+  area        String   // "TODOS LOS ALMACENES" | "TRANSITO" | "IMPORT" | custom
+  shiftTime   String   // "6:00 AM" | "8:00 AM" | "11:00 AM" | "1:00 PM"
+  notes       String?  // ej: "permiso // dpw pagando dia feriado"
+  createdBy   User     @relation(fields: [createdById], references: [id])
+  createdById Int
+  createdAt   DateTime @default(now())
+}

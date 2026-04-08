@@ -3,6 +3,7 @@ import { getAssignmentsData } from "@/app/actions/assignments";
 import AssignmentGrid from "./AssignmentGrid";
 import DateNav from "./DateNav";
 import ExportMenu from "./ExportMenu";
+import DuplicateButton from "./DuplicateButton";
 
 interface Props {
   searchParams: Promise<{ date?: string }>;
@@ -12,7 +13,7 @@ export default async function AsignacionesPage({ searchParams }: Props) {
   const params = await searchParams;
   const date = params.date ?? format(new Date(), "yyyy-MM-dd");
 
-  const { zones, assignments, supervisorAssignments, employees } =
+  const { zones, assignments, supervisorAssignments, employees, shiftColumns } =
     await getAssignmentsData(date);
 
   return (
@@ -25,6 +26,7 @@ export default async function AsignacionesPage({ searchParams }: Props) {
             {assignments.length} asignaciones ·{" "}
             {supervisorAssignments.length} supervisores
           </span>
+          <DuplicateButton currentDate={date} />
           <ExportMenu date={date} />
         </div>
       </div>
@@ -36,6 +38,7 @@ export default async function AsignacionesPage({ searchParams }: Props) {
         assignments={assignments}
         supervisorAssignments={supervisorAssignments}
         employees={employees}
+        shiftColumns={shiftColumns}
       />
     </div>
   );

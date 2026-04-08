@@ -1,16 +1,17 @@
 "use client";
 
-import { useState, useTransition, useMemo } from "react";
-import { Plus, X, ChevronDown } from "lucide-react";
+import { useState, useTransition } from "react";
+import { Plus, X, ChevronDown, Pencil } from "lucide-react";
 import { getDay, parseISO } from "date-fns";
 import {
   addAssignment,
   removeAssignment,
   addSupervisorAssignment,
   removeSupervisorAssignment,
+  updateShiftLabel,
+  DEFAULT_SHIFTS,
 } from "@/app/actions/assignments";
 
-const SHIFT_TIMES = ["6:00 AM", "8:00 AM", "11:00 AM", "1:00 PM"] as const;
 const MAINTENANCE_SHIFT = "TODO EL DIA";
 const SUPERVISOR_AREAS = [
   "TODOS LOS ALMACENES",
@@ -49,6 +50,7 @@ interface Props {
   assignments: Assignment[];
   supervisorAssignments: SupervisorAssignment[];
   employees: Employee[];
+  shiftColumns: string[];
 }
 
 interface ModalState {
@@ -70,9 +72,10 @@ export default function AssignmentGrid({
   assignments,
   supervisorAssignments,
   employees,
+  shiftColumns,
 }: Props) {
   const [modal, setModal] = useState<ModalState | null>(null);
-  const [selectedShift, setSelectedShift] = useState<string>(SHIFT_TIMES[0]);
+  const [selectedShift, setSelectedShift] = useState<string>(shiftColumns[0] ?? DEFAULT_SHIFTS[0]);
   const [useCustomShift, setUseCustomShift] = useState(false);
   const [customShiftValue, setCustomShiftValue] = useState("");
   const [showReforzando, setShowReforzando] = useState(false);
@@ -80,17 +83,31 @@ export default function AssignmentGrid({
   const [notes, setNotes] = useState("");
   const [isPending, startTransition] = useTransition();
 
+  // Editable column headers
+  const [editingShift, setEditingShift] = useState<string | null>(null);
+  const [editingValue, setEditingValue] = useState("");
+
+  function saveShiftEdit() {
+    if (!editingShift || !editingValue.trim() || editingValue === editingShift) {
+      setEditingShift(null);
+      return;
+    }
+    startTransition(async () => {
+      await updateShiftLabel(date, editingShift, editingValue.trim());
+      setEditingShift(null);
+    });
+  }
+
   // Effective shift used when submitting
   const effectiveShift = useCustomShift ? customShiftValue : selectedShift;
 
-  // All shift columns: defaults + any custom ones already in today's assignments
-  const allShiftColumns = useMemo(() => {
-    const existing = new Set(assignments.map((a) => a.shiftTime));
-    const extras = [...existing].filter(
-      (s) => !(SHIFT_TIMES as readonly string[]).includes(s) && s !== MAINTENANCE_SHIFT
+  // All shift columns: from server prop + any custom-timed assignments not yet in config
+  const allShiftColumns = (() => {
+    const extra = [...new Set(assignments.map((a) => a.shiftTime))].filter(
+      (s) => !shiftColumns.includes(s) && s !== MAINTENANCE_SHIFT
     );
-    return [...SHIFT_TIMES, ...extras];
-  }, [assignments]);
+    return [...shiftColumns, ...extra];
+  })();
 
   // IDs of supervisors already assigned today (any shift)
   const assignedSupervisorIds = new Set(supervisorAssignments.map((sa) => sa.employeeId));
@@ -258,9 +275,30 @@ export default function AssignmentGrid({
           {allShiftColumns.map((shift) => (
             <div
               key={shift}
-              className="px-3 py-3 text-xs font-bold text-slate-600 uppercase tracking-wider border-l border-slate-200 text-center"
+              className="px-2 py-3 text-xs font-bold text-slate-600 uppercase tracking-wider border-l border-slate-200 text-center"
             >
-              {shift}
+              {editingShift === shift ? (
+                <input
+                  autoFocus
+                  value={editingValue}
+                  onChange={(e) => setEditingValue(e.target.value)}
+                  onBlur={saveShiftEdit}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") saveShiftEdit();
+                    if (e.key === "Escape") setEditingShift(null);
+                  }}
+                  className="w-full text-center text-xs font-bold bg-white border border-blue-400 rounded px-1 py-0.5 outline-none"
+                />
+              ) : (
+                <button
+                  onDoubleClick={() => { setEditingShift(shift); setEditingValue(shift); }}
+                  className="group inline-flex items-center gap-1 hover:text-blue-600 transition-colors"
+                  title="Doble clic para editar el turno"
+                >
+                  {shift}
+                  <Pencil size={9} className="opacity-0 group-hover:opacity-60 transition-opacity shrink-0" />
+                </button>
+              )}
             </div>
           ))}
         </div>
@@ -291,28 +329,37 @@ export default function AssignmentGrid({
                 >
                   {cellAssignments.map((a) => {
                     const isReforzando = hasDayOff(a.employee, date);
+                    const isMontacargista = a.employee.role === "montacargista";
+                    const chipClass = isReforzando
+                      ? "bg-amber-50 border-amber-300"
+                      : isMontacargista
+                      ? "bg-green-50 border-green-200"
+                      : "bg-blue-50 border-blue-200";
+                    const textClass = isReforzando
+                      ? "text-amber-900"
+                      : isMontacargista
+                      ? "text-green-900"
+                      : "text-blue-900";
+                    const xClass = isReforzando
+                      ? "text-amber-300"
+                      : isMontacargista
+                      ? "text-green-300"
+                      : "text-blue-300";
                     return (
                       <div
                         key={a.id}
-                        title={isReforzando ? "Reforzando (día de descanso)" : undefined}
-                        className={`group flex items-center justify-between rounded-md px-2 py-1 border ${
-                          isReforzando
-                            ? "bg-amber-50 border-amber-300"
-                            : "bg-blue-50 border-blue-200"
-                        }`}
+                        title={isReforzando ? "Reforzando (día de descanso)" : isMontacargista ? "Montacargista" : undefined}
+                        className={`group flex items-center justify-between rounded-md px-2 py-1 border ${chipClass}`}
                       >
-                        <span className={`text-xs font-medium truncate ${isReforzando ? "text-amber-900" : "text-blue-900"}`}>
+                        <span className={`text-xs font-medium truncate ${textClass}`}>
                           {a.employee.name}
-                          {isReforzando && (
-                            <span className="ml-1 text-[10px] font-bold text-amber-600">★</span>
-                          )}
+                          {isReforzando && <span className="ml-1 text-[10px] font-bold text-amber-600">★</span>}
+                          {isMontacargista && !isReforzando && <span className="ml-1 text-[10px] font-bold text-green-600">MTC</span>}
                         </span>
                         <button
                           onClick={() => handleRemove(a.id)}
                           disabled={isPending}
-                          className={`transition-colors ml-1 shrink-0 group-hover:text-red-500 ${
-                            isReforzando ? "text-amber-300" : "text-blue-300"
-                          }`}
+                          className={`transition-colors ml-1 shrink-0 group-hover:text-red-500 ${xClass}`}
                         >
                           <X size={12} />
                         </button>
@@ -417,7 +464,7 @@ export default function AssignmentGrid({
                     Turno
                   </label>
                   <div className="grid grid-cols-5 gap-2">
-                    {SHIFT_TIMES.map((s) => (
+                    {shiftColumns.map((s) => (
                       <button
                         key={s}
                         onClick={() => { setSelectedShift(s); setUseCustomShift(false); }}

@@ -80,6 +80,13 @@ model Assignment {
   createdAt   DateTime @default(now())
 }
 
+// ─── Configuración de turnos por día (horas editables por fecha) ─────────────
+model DayShiftConfig {
+  id     Int    @id @default(autoincrement())
+  date   String @unique // YYYY-MM-DD
+  shifts String // JSON: '["6:00 AM","8:00 AM","11:00 AM","1:00 PM"]'
+}
+
 // ─── Asignaciones de supervisores (fila de header en el Excel) ───────────────
 model SupervisorAssignment {
   id          Int      @id @default(autoincrement())

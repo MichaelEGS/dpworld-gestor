@@ -11,20 +11,23 @@ async function main() {
 
   // ─── Zonas fijas (estructura del Excel) ──────────────────────────────────
   const zones = [
-    { id: 1, name: "TRANSITO INTERNACIONAL", displayOrder: 1, isSubZone: false },
-    { id: 3, name: "IMPORTACION", displayOrder: 2, isSubZone: false },
-    { id: 4, name: "632 DV FRENTE", displayOrder: 3, isSubZone: false },
-    { id: 5, name: "632 DV INTERIOR", displayOrder: 4, isSubZone: false },
-    { id: 6, name: "928 DX ORION FRENTE", displayOrder: 5, isSubZone: false },
-    { id: 7, name: "928 DX ORION INTERIOR", displayOrder: 6, isSubZone: false },
-    { id: 8, name: "AMARRADORES", displayOrder: 7, isSubZone: false },
-    { id: 2, name: "MANTENIMIENTO", displayOrder: 8, isSubZone: true },
+    { id: 9,  name: "EXPORTACION",          displayOrder: 1,  isSubZone: false },
+    { id: 3,  name: "IMPORTACION",           displayOrder: 2,  isSubZone: false },
+    { id: 1,  name: "TRANSITO INTERNACIONAL",displayOrder: 3,  isSubZone: false },
+    { id: 10, name: "PAQUETERIA",            displayOrder: 4,  isSubZone: false },
+    { id: 4,  name: "632 DV IN",             displayOrder: 5,  isSubZone: false },
+    { id: 5,  name: "632 DV OUT",            displayOrder: 6,  isSubZone: false },
+    { id: 6,  name: "928 DX IN",             displayOrder: 7,  isSubZone: false },
+    { id: 7,  name: "928 DX OUT",            displayOrder: 8,  isSubZone: false },
+    { id: 8,  name: "AMARRADORES IN",        displayOrder: 9,  isSubZone: false },
+    { id: 11, name: "AMARRADORES OUT",       displayOrder: 10, isSubZone: false },
+    { id: 2,  name: "MANTENIMIENTO",         displayOrder: 11, isSubZone: true  },
   ];
 
   for (const zone of zones) {
     await prisma.zone.upsert({
       where: { id: zone.id },
-      update: {},
+      update: { name: zone.name, displayOrder: zone.displayOrder },
       create: zone,
     });
   }

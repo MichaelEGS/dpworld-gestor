@@ -11,6 +11,7 @@ import {
 
 const ROLES = [
   { value: "operario", label: "Operario" },
+  { value: "montacargista", label: "Montacargista" },
   { value: "supervisor_cargo", label: "Supervisor de Carga" },
   { value: "mantenimiento", label: "Mantenimiento" },
 ] as const;

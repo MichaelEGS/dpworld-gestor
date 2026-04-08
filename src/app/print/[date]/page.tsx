@@ -6,7 +6,6 @@ import { getAssignmentsData } from "@/app/actions/assignments";
 import PrintButton from "./PrintButton";
 import ExportImageButton from "./ExportImageButton";
 
-const DEFAULT_SHIFTS = ["6:00 AM", "8:00 AM", "11:00 AM", "1:00 PM"];
 
 interface Props {
   params: Promise<{ date: string }>;
@@ -17,19 +16,15 @@ export default async function PrintPage({ params }: Props) {
   if (!session.isLoggedIn) redirect("/login");
 
   const { date } = await params;
-  const { zones, assignments, supervisorAssignments } =
+  const { zones, assignments, supervisorAssignments, shiftColumns } =
     await getAssignmentsData(date);
 
   const dateLabel = format(parseISO(date), "EEEE d 'de' MMMM yyyy", {
     locale: es,
   });
 
-  // Include any custom shift times present in today's assignments
-  const existingShifts = new Set(assignments.map((a) => a.shiftTime));
-  const SHIFTS = [
-    ...DEFAULT_SHIFTS,
-    ...[...existingShifts].filter((s) => !DEFAULT_SHIFTS.includes(s) && s !== "TODO EL DIA"),
-  ];
+  // Use configured shift columns for this day (includes any custom times)
+  const SHIFTS = shiftColumns.filter((s) => s !== "TODO EL DIA");
 
   function getNames(zoneId: number, shift: string) {
     return assignments

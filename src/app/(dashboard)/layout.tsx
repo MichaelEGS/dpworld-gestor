@@ -2,7 +2,7 @@ import { redirect } from "next/navigation";
 import Link from "next/link";
 import { getSession } from "@/app/actions/auth";
 import LogoutButton from "@/components/LogoutButton";
-import { Users, CalendarDays } from "lucide-react";
+import { Users, CalendarDays, MapPin } from "lucide-react";
 
 export default async function DashboardLayout({
   children,
@@ -40,13 +40,22 @@ export default async function DashboardLayout({
               Asignaciones
             </Link>
             {session.role === "admin" && (
-              <Link
-                href="/empleados"
-                className="flex items-center gap-1.5 text-sm text-slate-600 hover:text-slate-900 px-3 py-1.5 rounded-lg hover:bg-slate-100 transition-colors"
-              >
-                <Users size={15} />
-                Empleados
-              </Link>
+              <>
+                <Link
+                  href="/empleados"
+                  className="flex items-center gap-1.5 text-sm text-slate-600 hover:text-slate-900 px-3 py-1.5 rounded-lg hover:bg-slate-100 transition-colors"
+                >
+                  <Users size={15} />
+                  Empleados
+                </Link>
+                <Link
+                  href="/zonas"
+                  className="flex items-center gap-1.5 text-sm text-slate-600 hover:text-slate-900 px-3 py-1.5 rounded-lg hover:bg-slate-100 transition-colors"
+                >
+                  <MapPin size={15} />
+                  Zonas
+                </Link>
+              </>
             )}
           </nav>
 

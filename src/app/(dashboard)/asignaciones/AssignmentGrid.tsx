@@ -9,8 +9,8 @@ import {
   addSupervisorAssignment,
   removeSupervisorAssignment,
   updateShiftLabel,
-  DEFAULT_SHIFTS,
 } from "@/app/actions/assignments";
+import { DEFAULT_SHIFTS } from "@/lib/constants";
 
 const MAINTENANCE_SHIFT = "TODO EL DIA";
 const SUPERVISOR_AREAS = [

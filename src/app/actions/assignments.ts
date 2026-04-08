@@ -3,8 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import { getSession } from "./auth";
-
-export const DEFAULT_SHIFTS = ["6:00 AM", "8:00 AM", "11:00 AM", "1:00 PM"];
+import { DEFAULT_SHIFTS } from "@/lib/constants";
 
 export async function getAssignmentsData(date: string) {
   const [zones, assignments, supervisorAssignments, employees, shiftConfig] =

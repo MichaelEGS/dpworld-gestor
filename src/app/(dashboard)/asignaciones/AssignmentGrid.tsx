@@ -83,6 +83,9 @@ export default function AssignmentGrid({
   const [notes, setNotes] = useState("");
   const [isPending, startTransition] = useTransition();
 
+  // Employee search in modal
+  const [search, setSearch] = useState("");
+
   // Editable column headers
   const [editingShift, setEditingShift] = useState<string | null>(null);
   const [editingValue, setEditingValue] = useState("");
@@ -115,6 +118,7 @@ export default function AssignmentGrid({
   function openModal(state: ModalState) {
     setModal(state);
     setNotes("");
+    setSearch("");
     setShowReforzando(false);
     setUseCustomShift(false);
     setCustomShiftValue("");
@@ -565,13 +569,24 @@ export default function AssignmentGrid({
                 <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wide mb-2">
                   Seleccionar empleado
                 </label>
-                <div className="max-h-60 overflow-y-auto border border-slate-200 rounded-xl divide-y divide-slate-100">
-                  {availableEmployees.length === 0 ? (
+                <input
+                  type="text"
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                  placeholder="Buscar por nombre..."
+                  className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 mb-2"
+                />
+                <div className="max-h-52 overflow-y-auto border border-slate-200 rounded-xl divide-y divide-slate-100">
+                  {availableEmployees.filter((e) =>
+                    e.name.toLowerCase().includes(search.toLowerCase())
+                  ).length === 0 ? (
                     <p className="text-sm text-slate-400 text-center py-8 italic">
                       Sin empleados disponibles
                     </p>
                   ) : (
-                    availableEmployees.map((emp) => {
+                    availableEmployees
+                    .filter((e) => e.name.toLowerCase().includes(search.toLowerCase()))
+                    .map((emp) => {
                       const isDayOff = hasDayOff(emp, date);
                       return (
                       <button

@@ -17,6 +17,7 @@ const SUPERVISOR_AREAS = [
   "TODOS LOS ALMACENES",
   "TRANSITO",
   "IMPORT",
+  "EXPORT",
 ] as const;
 
 type Employee = {
